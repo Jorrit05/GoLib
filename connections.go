@@ -1,6 +1,8 @@
 package GoLib
 
 import (
+	"context"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -55,4 +57,15 @@ func Consume(queueName string) (<-chan amqp.Delivery, error) {
 		return nil, err
 	}
 	return messages, nil
+}
+
+func Publish(queueName string, message []byte) error {
+	err := channel.PublishWithContext(context.Background(), "", queueName, false, false, amqp.Publishing{
+		ContentType: "text/json",
+		Body:        message,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
