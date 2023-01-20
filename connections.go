@@ -9,9 +9,9 @@ import (
 var conn *amqp.Connection
 var channel *amqp.Channel
 
-func Connect() (*amqp.Connection, error) {
+func Connect(connectionString string) (*amqp.Connection, error) {
 	var err error
-	conn, err = amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err = amqp.Dial(connectionString)
 	if err != nil {
 		return nil, err
 	}
