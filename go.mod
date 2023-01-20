@@ -2,4 +2,4 @@ module github.com/Jorrit05/GoLib
 
 go 1.19
 
-require github.com/streadway/amqp v1.0.0 // indirect
+require github.com/rabbitmq/amqp091-go v1.5.0
