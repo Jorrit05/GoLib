@@ -3,6 +3,7 @@ package GoLib
 import (
 	"context"
 	"log"
+	"os"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -10,8 +11,8 @@ import (
 var conn *amqp.Connection
 var channel *amqp.Channel
 
-func SetupConnection() (*amqp.Connection, *amqp.Channel, error) {
-	connectionString := "amqp://guest:guest@localhost:5672/" // os.Getenv("AMQ_CONNECT")
+func SetupConnection(serviceName string, routingKey string) (*amqp.Connection, *amqp.Channel, error) {
+	connectionString := os.Getenv("AMQ_CONNECT")
 	conn, err := Connect(connectionString)
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
@@ -22,6 +23,15 @@ func SetupConnection() (*amqp.Connection, *amqp.Channel, error) {
 	if err != nil {
 		log.Fatalf("Failed to create exchange: %v", err)
 		return nil, nil, err
+	}
+
+	queue, err := DeclareQueue(serviceName)
+	if err != nil {
+		log.Fatalf("Failed to declare queue: %v", err)
+	}
+
+	if err := channel.QueueBind(queue.Name, routingKey, "topic_exchange", false, nil); err != nil {
+		log.Fatalf("Queue Bind: %s", err)
 	}
 
 	return conn, channel, nil
