@@ -13,13 +13,13 @@ var channel *amqp.Channel
 func SetupConnection(serviceName string, routingKey string) (*amqp.Connection, *amqp.Channel, error) {
 	connectionString, err := GetAMQConnectionString()
 	if err != nil {
-		log.Fatalf("Failed to create connectionString: %v", err)
+		log.Fatalf("Failed to create connectionString to RabbitMQ: %v", err)
 		return nil, nil, err
 	}
 
 	conn, err := Connect(connectionString)
 	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+		log.Fatalf("Failed to connect to RabbitMQ: %v, %s", err, connectionString)
 		return nil, nil, err
 	}
 
