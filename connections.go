@@ -3,7 +3,6 @@ package GoLib
 import (
 	"context"
 	"log"
-	"os"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -12,7 +11,11 @@ var conn *amqp.Connection
 var channel *amqp.Channel
 
 func SetupConnection(serviceName string, routingKey string) (*amqp.Connection, *amqp.Channel, error) {
-	connectionString := os.Getenv("AMQ_CONNECT")
+	connectionString, err := GetAMQConnectionString()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	conn, err := Connect(connectionString)
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
