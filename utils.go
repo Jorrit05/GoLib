@@ -1,10 +1,29 @@
 package GoLib
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
+
+type serviceFunc func(message amqp.Delivery) amqp.Publishing
+
+func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *amqp.Channel, routingKey string) {
+	// Message loop stays alive
+	for msg := range messages {
+		log.Printf("Received message: %v", string(msg.Body))
+		anonymizedMsg := fn(msg)
+
+		err := channel.PublishWithContext(context.Background(), "topic_exchange", routingKey, false, false, anonymizedMsg)
+		if err != nil {
+			log.Fatalf("Error publishing message: %v", err)
+		}
+	}
+}
 
 func ReadFile(fileName string) (string, error) {
 	data, err := os.ReadFile(fileName)
