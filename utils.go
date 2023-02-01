@@ -22,6 +22,8 @@ func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *am
 		newMsg, err := fn(msg)
 
 		if err != nil {
+			log.Printf("StartMessageLoop: should throw an error %v", err.Error())
+
 			publishing := amqp.Publishing{
 				Body: []byte("Error executing query: " + err.Error()),
 			}
