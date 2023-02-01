@@ -1,44 +1,11 @@
 package GoLib
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
 	"strings"
-
-	amqp "github.com/rabbitmq/amqp091-go"
 )
-
-type serviceFunc func(message amqp.Delivery) (amqp.Publishing, error)
-
-func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *amqp.Channel, routingKey string, exchangeName string) {
-	if exchangeName == "" {
-		exchangeName = "topic_exchange"
-	}
-	// Message loop stays alive
-	for msg := range messages {
-		log.Printf("StartMessageLoop: Received message: %v", string(msg.Body))
-		newMsg, err := fn(msg)
-
-		if err != nil {
-			log.Printf("StartMessageLoop: should throw an error %v", err.Error())
-
-			publishing := amqp.Publishing{
-				Body: []byte("Error executing query: " + err.Error()),
-			}
-			err := channel.PublishWithContext(context.Background(), "dead-letter-exchange", routingKey, false, false, publishing)
-			if err != nil {
-				log.Fatalf("StartMessageLoop: Error publishing message: %v", err)
-			}
-		} else {
-			err := channel.PublishWithContext(context.Background(), exchangeName, routingKey, false, false, newMsg)
-			if err != nil {
-				log.Printf("StartMessageLoop: Error publishing message: %v", err)
-			}
-		}
-	}
-}
 
 func StartLog() *os.File {
 	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)

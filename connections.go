@@ -11,6 +11,8 @@ import (
 var conn *amqp.Connection
 var channel *amqp.Channel
 
+type serviceFunc func(message amqp.Delivery) (amqp.Publishing, error)
+
 // SetupConnection establishes a connection to RabbitMQ and sets up a topic exchange, queue, and consumer to listen to
 // messages with the specified routing key.
 // It returns a channel to receive delivery messages, the AMQP connection, and channel objects, and an error if any occurs during the setup.
@@ -57,6 +59,32 @@ func SetupConnection(serviceName string, routingKey string) (<-chan amqp.Deliver
 	}
 
 	return messages, conn, channel, nil
+}
+
+func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *amqp.Channel, routingKey string, exchangeName string) {
+	if exchangeName == "" {
+		exchangeName = "topic_exchange"
+	}
+	// Message loop stays alive
+	for msg := range messages {
+		log.Printf("StartMessageLoop: Received message: %v", string(msg.Body))
+		newMsg, err := fn(msg)
+
+		if err != nil {
+			publishing := amqp.Publishing{
+				Body: []byte("Error executing query: " + err.Error()),
+			}
+			err := channel.PublishWithContext(context.Background(), "dead-letter-exchange", routingKey, false, false, publishing)
+			if err != nil {
+				log.Fatalf("StartMessageLoop: Error publishing message: %v", err)
+			}
+		} else {
+			err := channel.PublishWithContext(context.Background(), exchangeName, routingKey, false, false, newMsg)
+			if err != nil {
+				log.Printf("StartMessageLoop: Error publishing message: %v", err)
+			}
+		}
+	}
 }
 
 func Connect(connectionString string) (*amqp.Connection, error) {
