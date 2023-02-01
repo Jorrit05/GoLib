@@ -28,6 +28,14 @@ func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *am
 	}
 }
 
+func StartLog() *os.File {
+	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	return f
+}
+
 func ReadFile(fileName string) (string, error) {
 	data, err := os.ReadFile(fileName)
 	if err != nil {
