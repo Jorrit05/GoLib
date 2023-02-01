@@ -12,13 +12,16 @@ import (
 
 type serviceFunc func(message amqp.Delivery) amqp.Publishing
 
-func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *amqp.Channel, routingKey string) {
+func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *amqp.Channel, routingKey string, exchangeName string) {
+	if exchangeName == "" {
+		exchangeName = "topic_exchange"
+	}
 	// Message loop stays alive
 	for msg := range messages {
 		log.Printf("Received message: %v", string(msg.Body))
 		anonymizedMsg := fn(msg)
 
-		err := channel.PublishWithContext(context.Background(), "topic_exchange", routingKey, false, false, anonymizedMsg)
+		err := channel.PublishWithContext(context.Background(), exchangeName, routingKey, false, false, anonymizedMsg)
 		if err != nil {
 			log.Fatalf("Error publishing message: %v", err)
 		}
