@@ -52,6 +52,8 @@ func SetupConnection(serviceName string, routingKey string) (<-chan amqp.Deliver
 	if err != nil {
 		log.Fatalf("Failed to register consumer: %v", err)
 		return nil, nil, nil, err
+	} else {
+		log.Printf("Registered consumer: %s", os.Getenv("INPUT_QUEUE"))
 	}
 
 	return messages, conn, channel, nil
