@@ -76,11 +76,13 @@ func Connect(connectionString string) (*amqp.Connection, error) {
 func DeclareQueue(name string) (*amqp.Queue, error) {
 	queue, err := channel.QueueDeclare(
 		name,  // name
-		false, // durable
+		true,  // durable
 		false, // delete when unused
 		false, // exclusive
 		false, // no-wait
-		nil,   // arguments
+		amqp.Table{
+			"x-dead-letter-exchange": "dead-letter-exchange",
+		},
 	)
 	if err != nil {
 		return nil, err
