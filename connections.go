@@ -37,18 +37,21 @@ func SetupConnection(serviceName string, routingKey string) (<-chan amqp.Deliver
 	queue, err := DeclareQueue(serviceName)
 	if err != nil {
 		log.Fatalf("Failed to declare queue: %v", err)
+		return nil, nil, nil, err
 	}
 
 	// Bind queue to "topic_exchange"
 	// TODO: Make "topic_exchange" flexible?
 	if err := channel.QueueBind(queue.Name, routingKey, "topic_exchange", false, nil); err != nil {
 		log.Fatalf("Queue Bind: %s", err)
+		return nil, nil, nil, err
 	}
 
 	// Start listening to queue defined by environment var INPUT_QUEUE
 	messages, err := Consume(os.Getenv("INPUT_QUEUE"))
 	if err != nil {
 		log.Fatalf("Failed to register consumer: %v", err)
+		return nil, nil, nil, err
 	}
 
 	return messages, conn, channel, nil
