@@ -11,6 +11,11 @@ import (
 var conn *amqp.Connection
 var channel *amqp.Channel
 
+// SetupConnection establishes a connection to RabbitMQ and sets up a topic exchange, queue, and consumer to listen to
+// messages with the specified routing key.
+// It returns a channel to receive delivery messages, the AMQP connection, and channel objects, and an error if any occurs during the setup.
+// The connection string and the routing key are passed as arguments.
+// The service name is used to declare the queue.
 func SetupConnection(serviceName string, routingKey string) (<-chan amqp.Delivery, *amqp.Connection, *amqp.Channel, error) {
 	connectionString, err := GetAMQConnectionString()
 	if err != nil {
@@ -34,6 +39,8 @@ func SetupConnection(serviceName string, routingKey string) (<-chan amqp.Deliver
 		log.Fatalf("Failed to declare queue: %v", err)
 	}
 
+	// Bind queue to "topic_exchange"
+	// TODO: Make "topic_exchange" flexible?
 	if err := channel.QueueBind(queue.Name, routingKey, "topic_exchange", false, nil); err != nil {
 		log.Fatalf("Queue Bind: %s", err)
 	}
