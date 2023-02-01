@@ -28,8 +28,8 @@ func GetAMQConnectionString() (string, error) {
 }
 
 func GetSQLConnectionString() (string, error) {
-	user := os.Getenv("AMQ_USER")
-	pwFile := os.Getenv("AMQ_PASSWORD_FILE")
+	user := os.Getenv("DB_USER")
+	pwFile := os.Getenv("MYSQL_ROOT_PASSWORD_FILE")
 	pw, err := ReadFile(pwFile)
 	if err != nil {
 		return "", err
@@ -37,5 +37,5 @@ func GetSQLConnectionString() (string, error) {
 
 	pw = strings.TrimSuffix(pw, "\n")
 
-	return fmt.Sprintf("amqp://%s:%s@rabbit:5672/", user, pw), nil
+	return fmt.Sprintf("%s:%s@tcp(mysql:3306)/%s", user, pw, os.Getenv("MYSQL_DATABASE")), nil
 }
