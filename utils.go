@@ -10,7 +10,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type serviceFunc func(message amqp.Delivery) amqp.Publishing
+type serviceFunc func(message amqp.Delivery) (amqp.Publishing, error)
 
 func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *amqp.Channel, routingKey string, exchangeName string) {
 	if exchangeName == "" {
@@ -18,12 +18,22 @@ func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *am
 	}
 	// Message loop stays alive
 	for msg := range messages {
-		log.Printf("Received message: %v", string(msg.Body))
-		anonymizedMsg := fn(msg)
+		log.Printf("StartMessageLoop: Received message: %v", string(msg.Body))
+		newMsg, err := fn(msg)
 
-		err := channel.PublishWithContext(context.Background(), exchangeName, routingKey, false, false, anonymizedMsg)
 		if err != nil {
-			log.Fatalf("Error publishing message: %v", err)
+			publishing := amqp.Publishing{
+				Body: []byte("Error executing query: " + err.Error()),
+			}
+			err := channel.PublishWithContext(context.Background(), "dead-letter-exchange", routingKey, false, false, publishing)
+			if err != nil {
+				log.Fatalf("StartMessageLoop: Error publishing message: %v", err)
+			}
+		} else {
+			err := channel.PublishWithContext(context.Background(), exchangeName, routingKey, false, false, newMsg)
+			if err != nil {
+				log.Printf("StartMessageLoop: Error publishing message: %v", err)
+			}
 		}
 	}
 }
