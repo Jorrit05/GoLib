@@ -156,11 +156,12 @@ func Consume(queueName string) (<-chan amqp.Delivery, error) {
 	return messages, nil
 }
 
-func Publish(queueName string, message []byte) error {
-	err := channel.PublishWithContext(context.Background(), "", queueName, false, false, amqp.Publishing{
-		ContentType: "application/json",
-		Body:        message,
-	})
+func Publish(queueName string, message amqp.Publishing, exchangeName string) error {
+	if exchangeName == "" {
+		exchangeName = "topic_exchange"
+	}
+
+	err := channel.PublishWithContext(context.Background(), exchangeName, queueName, false, false, message)
 	if err != nil {
 		return err
 	}

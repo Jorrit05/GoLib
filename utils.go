@@ -48,3 +48,14 @@ func GetSQLConnectionString() (string, error) {
 
 	return fmt.Sprintf("%s:%s@tcp(mysql:3306)/%s", user, pw, os.Getenv("MYSQL_DATABASE")), nil
 }
+
+// func ConvertRequest(req *http.Request) {
+// 	body, err := ioutil.ReadAll(req.Body)
+// 	if err != nil {
+// 		log.Printf("Error reading body: %v", err)
+// 		http.Error(w, "Error reading request body", http.StatusBadRequest)
+// 		return
+// 	}
+// 	defer req.Body.Close()
+// 	return body
+// }
