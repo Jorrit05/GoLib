@@ -65,6 +65,8 @@ func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *am
 	if exchangeName == "" {
 		exchangeName = "topic_exchange"
 	}
+
+	log.Printf("before messageloop of %s", routingKey)
 	// Message loop stays alive
 	for msg := range messages {
 		log.Printf("StartMessageLoop: Received message: %v", string(msg.Body))
@@ -156,7 +158,7 @@ func Consume(queueName string) (<-chan amqp.Delivery, error) {
 
 func Publish(queueName string, message []byte) error {
 	err := channel.PublishWithContext(context.Background(), "", queueName, false, false, amqp.Publishing{
-		ContentType: "text/json",
+		ContentType: "application/json",
 		Body:        message,
 	})
 	if err != nil {
