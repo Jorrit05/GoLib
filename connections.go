@@ -160,10 +160,14 @@ func Publish(chann *amqp.Channel, routingKey string, message amqp.Publishing, ex
 	if exchangeName == "" {
 		exchangeName = "topic_exchange"
 	}
+	log.Println("Publish: 1")
 
 	err := chann.PublishWithContext(context.Background(), exchangeName, routingKey, false, false, message)
 	if err != nil {
+		log.Printf("Publish: 2 %s", err)
 		return err
 	}
+	log.Println("Publish: 3")
+
 	return nil
 }
