@@ -3,6 +3,7 @@ package GoLib
 import (
 	"context"
 	"log"
+	"os"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -17,30 +18,28 @@ type serviceFunc func(message amqp.Delivery) (amqp.Publishing, error)
 // It returns a channel to receive delivery messages, the AMQP connection, and channel objects, and an error if any occurs during the setup.
 // The connection string and the routing key are passed as arguments.
 // The service name is used to declare the queue.
-// func SetupConnection(serviceName string, routingKey string) (<-chan amqp.Delivery, *amqp.Connection, *amqp.Channel, error) {
-func SetupConnection(serviceName string, routingKey string) (*amqp.Connection, *amqp.Channel, error) {
+func SetupConnection(serviceName string, routingKey string, startConsuming bool) (<-chan amqp.Delivery, *amqp.Connection, *amqp.Channel, error) {
 	connectionString, err := GetAMQConnectionString()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	conn, err := Connect(connectionString)
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	err = Exchange()
 	if err != nil {
 		log.Fatalf("Failed to create exchange: %v", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	queue, err := DeclareQueue(serviceName)
 	if err != nil {
 		log.Fatalf("Failed to declare queue: %v", err)
-		// return nil, nil, nil, err
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Bind queue to "topic_exchange"
@@ -53,22 +52,23 @@ func SetupConnection(serviceName string, routingKey string) (*amqp.Connection, *
 		nil,              // args
 	); err != nil {
 		log.Fatalf("Queue Bind: %s", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Start listening to queue defined by environment var INPUT_QUEUE
-	// if serviceName != "gateway_service" {
-	// messages, err := Consume(os.Getenv("INPUT_QUEUE"))
-	// if err != nil {
-	// 	log.Fatalf("Failed to register consumer: %v", err)
-	// 	return nil, nil, nil, err
-	// } else {
-	// 	log.Printf("Registered consumer: %s", os.Getenv("INPUT_QUEUE"))
-	// }
+	if startConsuming {
+		messages, err := Consume(os.Getenv("INPUT_QUEUE"))
+		if err != nil {
+			log.Fatalf("Failed to register consumer: %v", err)
+			return nil, nil, nil, err
+		} else {
+			log.Printf("Registered consumer: %s", os.Getenv("INPUT_QUEUE"))
+		}
 
-	// return messages, conn, channel, nil
+		return messages, conn, channel, nil
+	}
 
-	return conn, channel, nil
+	return nil, conn, channel, nil
 }
 
 func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *amqp.Channel, routingKey string, exchangeName string) {
