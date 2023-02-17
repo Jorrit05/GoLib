@@ -13,16 +13,12 @@ var conn *amqp.Connection
 
 type serviceFunc func(message amqp.Delivery) (amqp.Publishing, error)
 
-// SetupConnection establishes a connection to RabbitMQ and sets up a topic exchange, queue, and consumer to listen to
-// messages with the specified routing key.
-// It returns a channel to receive delivery messages, the AMQP connection, and channel objects, and an error if any occurs during the setup.
-// The connection string and the routing key are passed as arguments.
-// The service name is used to declare the queue.
-func SetupConnection(serviceName string, routingKey string, startConsuming bool) (<-chan amqp.Delivery, *amqp.Connection, *amqp.Channel, error) {
+func getConnectionToRabbitMq() (*amqp.Connection, *amqp.Channel, error) {
 	connectionString, err := GetAMQConnectionString()
 	if err != nil {
-		return nil, nil, nil, err
+		log.Fatalf("Failed to get an AMQ connectionString: %v", err)
 	}
+
 	var conn *amqp.Connection
 	var channel *amqp.Channel
 
@@ -39,8 +35,18 @@ func SetupConnection(serviceName string, routingKey string, startConsuming bool)
 	if err != nil {
 		log.Fatalf("Failed to setup proper connection to RabbitMQ after 7 attempts: %v", err)
 	}
+	return conn, channel, nil
+}
 
-	err = Exchange(channel)
+// SetupConnection establishes a connection to RabbitMQ and sets up a topic exchange, queue, and consumer to listen to
+// messages with the specified routing key.
+// It returns a channel to receive delivery messages, the AMQP connection, and channel objects, and an error if any occurs during the setup.
+// The connection string and the routing key are passed as arguments.
+// The service name is used to declare the queue.
+func SetupConnection(serviceName string, routingKey string, startConsuming bool) (<-chan amqp.Delivery, *amqp.Connection, *amqp.Channel, error) {
+	conn, channel, _ := getConnectionToRabbitMq()
+
+	err := Exchange(channel)
 	if err != nil {
 		log.Fatalf("Failed to create exchange: %v", err)
 		return nil, nil, nil, err
@@ -79,6 +85,29 @@ func SetupConnection(serviceName string, routingKey string, startConsuming bool)
 	}
 
 	return nil, conn, channel, nil
+}
+
+func StartNewConsumer() <-chan amqp.Delivery {
+	_, channel, _ := getConnectionToRabbitMq()
+	var messages <-chan amqp.Delivery
+	var err error
+	var consumer = os.Getenv("INPUT_QUEUE")
+	for i := 1; i <= 7; i++ { // maximum of 7 retries
+		messages, err = Consume(consumer, channel)
+		if err == nil {
+			break // no error, break out of loop
+		}
+
+		log.Printf("Failed to register consumer %s, retrying... %v", consumer, err)
+		time.Sleep(10 * time.Second) // wait for 10 seconds before retrying
+	}
+
+	if err != nil {
+		log.Fatalf("Failed to setup proper connection to RabbitMQ after 7 attempts: %v", err)
+	}
+
+	log.Printf("Registered consumer: %s", os.Getenv("INPUT_QUEUE"))
+	return messages
 }
 
 func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *amqp.Channel, routingKey string, exchangeName string) {
