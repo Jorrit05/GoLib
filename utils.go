@@ -49,8 +49,8 @@ func GetSQLConnectionString() (string, error) {
 	return fmt.Sprintf("%s:%s@tcp(mysql:3306)/%s", user, pw, os.Getenv("MYSQL_DATABASE")), nil
 }
 
-func GetDefaultOutputQueue(serviceName string) string {
-	routingKey := os.Getenv("ROUTING_KEY")
+func GetDefaultRoutingKey(serviceName string) string {
+	routingKey := os.Getenv("OUTPUT_QUEUE")
 	if routingKey == "" {
 		routingKey = "service." + strings.Split(serviceName, "_")[0]
 	}
