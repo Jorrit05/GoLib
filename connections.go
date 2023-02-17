@@ -87,8 +87,8 @@ func SetupConnection(serviceName string, routingKey string, startConsuming bool)
 	return nil, conn, channel, nil
 }
 
-func StartNewConsumer() <-chan amqp.Delivery {
-	_, channel, _ := getConnectionToRabbitMq()
+func StartNewConsumer() (<-chan amqp.Delivery, *amqp.Connection) {
+	conn, channel, _ := getConnectionToRabbitMq()
 	var messages <-chan amqp.Delivery
 	var err error
 	var consumer = os.Getenv("INPUT_QUEUE")
@@ -107,7 +107,7 @@ func StartNewConsumer() <-chan amqp.Delivery {
 	}
 
 	log.Printf("Registered consumer: %s", os.Getenv("INPUT_QUEUE"))
-	return messages
+	return messages, conn
 }
 
 func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *amqp.Channel, routingKey string, exchangeName string) {
