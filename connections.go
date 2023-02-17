@@ -4,12 +4,12 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 var conn *amqp.Connection
-var channel *amqp.Channel
 
 type serviceFunc func(message amqp.Delivery) (amqp.Publishing, error)
 
@@ -23,20 +23,30 @@ func SetupConnection(serviceName string, routingKey string, startConsuming bool)
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	var conn *amqp.Connection
+	var channel *amqp.Channel
 
-	conn, err := Connect(connectionString)
-	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
-		return nil, nil, nil, err
+	for i := 1; i <= 7; i++ { // maximum of 3 retries
+		conn, channel, err = Connect(connectionString)
+		if err == nil {
+			break // no error, break out of loop
+		}
+
+		log.Printf("Failed to connect to RabbitMQ: %v", err)
+		time.Sleep(10 * time.Second) // wait for 10 seconds before retrying
 	}
 
-	err = Exchange()
+	if err != nil {
+		log.Fatalf("Failed to setup proper connection to RabbitMQ after 7 attempts: %v", err)
+	}
+
+	err = Exchange(channel)
 	if err != nil {
 		log.Fatalf("Failed to create exchange: %v", err)
 		return nil, nil, nil, err
 	}
 
-	queue, err := DeclareQueue(serviceName)
+	queue, err := DeclareQueue(serviceName, channel)
 	if err != nil {
 		log.Fatalf("Failed to declare queue: %v", err)
 		return nil, nil, nil, err
@@ -57,7 +67,7 @@ func SetupConnection(serviceName string, routingKey string, startConsuming bool)
 
 	// Start listening to queue defined by environment var INPUT_QUEUE
 	if startConsuming {
-		messages, err := Consume(os.Getenv("INPUT_QUEUE"))
+		messages, err := Consume(os.Getenv("INPUT_QUEUE"), channel)
 		if err != nil {
 			log.Fatalf("Failed to register consumer: %v", err)
 			return nil, nil, nil, err
@@ -99,21 +109,21 @@ func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *am
 	}
 }
 
-func Connect(connectionString string) (*amqp.Connection, error) {
+func Connect(connectionString string) (*amqp.Connection, *amqp.Channel, error) {
 	var err error
 	conn, err = amqp.Dial(connectionString)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	channel, err = conn.Channel()
+	channel, err := conn.Channel()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return conn, nil
+	return conn, channel, nil
 }
 
-func DeclareQueue(name string) (*amqp.Queue, error) {
+func DeclareQueue(name string, channel *amqp.Channel) (*amqp.Queue, error) {
 	queue, err := channel.QueueDeclare(
 		name,  // name
 		true,  // durable
@@ -130,12 +140,12 @@ func DeclareQueue(name string) (*amqp.Queue, error) {
 	return &queue, nil
 }
 
-func Close() {
+func Close(channel *amqp.Channel) {
 	channel.Close()
 	conn.Close()
 }
 
-func Exchange() error {
+func Exchange(channel *amqp.Channel) error {
 	if err := channel.ExchangeDeclare(
 		"topic_exchange",
 		"topic",
@@ -150,7 +160,7 @@ func Exchange() error {
 	return nil
 }
 
-func Consume(queueName string) (<-chan amqp.Delivery, error) {
+func Consume(queueName string, channel *amqp.Channel) (<-chan amqp.Delivery, error) {
 	messages, err := channel.Consume(
 		queueName, // queue
 		"",        // consumer
