@@ -53,7 +53,10 @@ func GetDefaultRoutingKey(serviceName string) string {
 	routingKey := os.Getenv("OUTPUT_QUEUE")
 	if routingKey == "" {
 		routingKey = "service." + strings.Split(serviceName, "_")[0]
+	} else {
+		routingKey = "service." + strings.Split(routingKey, "_")[0]
 	}
+	log.Printf("GetDefaultRoutingKey: %s", routingKey)
 	return routingKey
 }
 
