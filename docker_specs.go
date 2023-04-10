@@ -3,13 +3,31 @@ package GoLib
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
-	"go.etcd.io/etcd/client"
+
+	"github.com/docker/docker/client"
 )
+
+func GetDockerClient() *client.Client {
+	// Create a new Docker client
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Fatalf("Error creating Docker client: %v", err)
+	}
+
+	// Check if Swarm is active
+	info, err := cli.Info(context.Background())
+	if err != nil {
+		log.Fatalf("Error getting Docker info: %v", err)
+	}
+	if !info.Swarm.ControlAvailable {
+		log.Fatal("This node is not a swarm manager. The agent can only be run on a swarm manager.")
+	}
+	return cli
+}
 
 func CreateServiceSpec(
 	imageName string,
@@ -19,8 +37,10 @@ func CreateServiceSpec(
 	secrets []string,
 	volumes map[string]string,
 	ports []swarm.PortConfig,
-	cli *client.Client,
-) swarm.ServiceSpec {
+) (swarm.ServiceSpec, *client.Client) {
+
+	cli := GetDockerClient()
+
 	if imageVersion == "" {
 		imageVersion = "latest"
 	}
@@ -80,7 +100,7 @@ func CreateServiceSpec(
 			Mode:  swarm.ResolutionModeVIP,
 			Ports: ports,
 		},
-	}
+	}, cli
 }
 
 func GetSecretIDByName(cli *client.Client, secretName string) (string, error) {

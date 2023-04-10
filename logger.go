@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	logrus "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
+)
+
+var (
+	log     *logrus.Entry
+	logFile *os.File
 )
 
 func InitLogger(serviceName string) (*logrus.Entry, *os.File) {
@@ -29,7 +34,9 @@ func InitLogger(serviceName string) (*logrus.Entry, *os.File) {
 	// Disable to prevent 20%-40% overhead
 	logrus.SetReportCaller(true)
 
-	return logrus.WithFields(logrus.Fields{
+	log = logrus.WithFields(logrus.Fields{
 		"service": serviceName,
-	}), logFile
+	})
+
+	return log, logFile
 }
