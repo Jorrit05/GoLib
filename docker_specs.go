@@ -1,66 +1,99 @@
 package GoLib
 
-// func createServiceSpec(
-// 	imageName string,
-// 	imageVersion string,
-// 	envVars map[string]string,
-// 	networks []string,
-// 	secrets []string,
-// 	volumes map[string]string,
-// 	ports []swarm.PortConfig,
-// ) swarm.ServiceSpec {
-// 	if imageVersion == "" {
-// 		imageVersion = "latest"
-// 	}
+import (
+	"context"
+	"fmt"
+	"log"
 
-// 	env := []string{}
-// 	for k, v := range envVars {
-// 		env = append(env, k+"="+v)
-// 	}
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/swarm"
+	"go.etcd.io/etcd/client"
+)
 
-// 	networkConfigs := []swarm.NetworkAttachmentConfig{}
-// 	for _, network := range networks {
-// 		networkConfigs = append(networkConfigs, swarm.NetworkAttachmentConfig{Target: network})
-// 	}
+func CreateServiceSpec(
+	imageName string,
+	imageVersion string,
+	envVars map[string]string,
+	networks []string,
+	secrets []string,
+	volumes map[string]string,
+	ports []swarm.PortConfig,
+	cli *client.Client,
+) swarm.ServiceSpec {
+	if imageVersion == "" {
+		imageVersion = "latest"
+	}
 
-// 	secretRefs := []*swarm.SecretReference{}
-// 	for _, secret := range secrets {
-// 		secretRefs = append(secretRefs, &swarm.SecretReference{
-// 			SecretName: secret,
-// 			File: &swarm.SecretReferenceFile{
-// 				Name: "/run/secrets/" + secret,
-// 				UID:  "0",
-// 				GID:  "0",
-// 				Mode: 0444,
-// 			},
-// 		})
-// 	}
+	env := []string{}
+	for k, v := range envVars {
+		env = append(env, k+"="+v)
+	}
 
-// 	mounts := []swarm.Mount{}
-// 	for src, target := range volumes {
-// 		mounts = append(mounts, swarm.Mount{
-// 			Type:   swarm.MountTypeBind,
-// 			Source: src,
-// 			Target: target,
-// 		})
-// 	}
+	networkConfigs := []swarm.NetworkAttachmentConfig{}
+	for _, network := range networks {
+		networkConfigs = append(networkConfigs, swarm.NetworkAttachmentConfig{Target: network})
+	}
 
-// 	return swarm.ServiceSpec{
-// 		Annotations: swarm.Annotations{
-// 			Name: imageName,
-// 		},
-// 		TaskTemplate: swarm.TaskSpec{
-// 			ContainerSpec: &swarm.ContainerSpec{
-// 				Image:   imageName + ":" + imageVersion,
-// 				Env:     env,
-// 				Secrets: secretRefs,
-// 				Mounts:  mounts,
-// 			},
-// 			Networks: networkConfigs,
-// 		},
-// 		EndpointSpec: &swarm.EndpointSpec{
-// 			Mode:  swarm.ResolutionModeVIP,
-// 			Ports: ports,
-// 		},
-// 	}
-// }
+	secretRefs := []*swarm.SecretReference{}
+	for _, secret := range secrets {
+		id, err := GetSecretIDByName(cli, secret)
+		if err != nil {
+			log.Fatalf("Secret does not exist, %s", err)
+		}
+
+		secretRefs = append(secretRefs, &swarm.SecretReference{
+			SecretName: secret,
+			SecretID:   id,
+			File: &swarm.SecretReferenceFileTarget{
+				Name: fmt.Sprintf("/run/secrets/%s", secret), // This should be just the filename, not the full path
+				UID:  "0",
+				GID:  "0",
+				Mode: 0444,
+			},
+		})
+	}
+
+	mounts := []mount.Mount{}
+	for src, target := range volumes {
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: src,
+			Target: target,
+		})
+	}
+
+	return swarm.ServiceSpec{
+		Annotations: swarm.Annotations{
+			Name: imageName,
+		},
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: &swarm.ContainerSpec{
+				Image:   imageName + ":" + imageVersion,
+				Env:     env,
+				Secrets: secretRefs,
+				Mounts:  mounts,
+			},
+			Networks: networkConfigs,
+		},
+		EndpointSpec: &swarm.EndpointSpec{
+			Mode:  swarm.ResolutionModeVIP,
+			Ports: ports,
+		},
+	}
+}
+
+func GetSecretIDByName(cli *client.Client, secretName string) (string, error) {
+	secrets, err := cli.SecretList(context.Background(), types.SecretListOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	for _, secret := range secrets {
+		if secret.Spec.Name == secretName {
+			return secret.ID, nil
+		}
+	}
+
+	return "", fmt.Errorf("secret not found: %s", secretName)
+}
