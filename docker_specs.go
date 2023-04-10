@@ -2,14 +2,15 @@ package GoLib
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
-
 	"github.com/docker/docker/client"
+	"github.com/sirupsen/logrus"
 )
 
 func GetDockerClient() *client.Client {
@@ -139,4 +140,28 @@ func GetSecretIDByName(cli *client.Client, secretName string) (string, error) {
 	}
 
 	return "", fmt.Errorf("secret not found: %s", secretName)
+}
+
+func CreateDockerService(cli *client.Client, spec swarm.ServiceSpec) types.ServiceCreateResponse {
+	serviceSpecJSON, err := json.MarshalIndent(spec, "", "  ")
+	if err != nil {
+		log.Fatalf("Error marshaling service spec to JSON: %v", err)
+	}
+
+	log.Println("---------------------------")
+	log.Println(string(serviceSpecJSON))
+	log.Println("---------------------------")
+
+	// Create the service
+	response, err := cli.ServiceCreate(context.Background(), spec, types.ServiceCreateOptions{})
+	if err != nil {
+		log.Fatalf("Error creating service: %v", err)
+	}
+
+	// Print the service ID
+	log.WithFields(logrus.Fields{
+		"responseId": response.ID,
+	}).Info("Service created")
+
+	return response
 }
