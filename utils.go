@@ -69,3 +69,8 @@ func GetDefaultRoutingKey(serviceName string) string {
 // 	defer req.Body.Close()
 // 	return body
 // }
+
+func LastPartAfterSlash(s string) string {
+	splitted := strings.Split(s, "/")
+	return splitted[len(splitted)-1]
+}

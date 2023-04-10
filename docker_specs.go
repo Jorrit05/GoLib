@@ -52,7 +52,10 @@ func CreateServiceSpec(
 
 	networkConfigs := []swarm.NetworkAttachmentConfig{}
 	for _, network := range networks {
-		networkConfigs = append(networkConfigs, swarm.NetworkAttachmentConfig{Target: network})
+		networkConfigs = append(networkConfigs, swarm.NetworkAttachmentConfig{
+			Target:  network,
+			Aliases: []string{imageName},
+		})
 	}
 
 	secretRefs := []*swarm.SecretReference{}
