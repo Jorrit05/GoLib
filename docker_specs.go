@@ -39,9 +39,8 @@ func CreateServiceSpec(
 	secrets []string,
 	volumes map[string]string,
 	ports map[string]string,
-) (swarm.ServiceSpec, *client.Client) {
-
-	cli := GetDockerClient()
+	cli *client.Client,
+) swarm.ServiceSpec {
 
 	if imageVersion == "" {
 		imageVersion = "latest"
@@ -124,7 +123,7 @@ func CreateServiceSpec(
 			Mode:  swarm.ResolutionModeVIP,
 			Ports: portConfigs,
 		},
-	}, cli
+	}
 }
 
 func GetSecretIDByName(cli *client.Client, secretName string) (string, error) {
