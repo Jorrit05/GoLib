@@ -7,7 +7,7 @@ import (
 	logrus "github.com/sirupsen/logrus"
 )
 
-func initLogger(serviceName string) (*logrus.Entry, *os.File) {
+func InitLogger(serviceName string) (*logrus.Entry, *os.File) {
 	logFile, err := os.OpenFile(fmt.Sprintf("/var/log/service_logs/%s.log", serviceName), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		logrus.Fatalf("Failed to open logfile %s: %v", serviceName, err)
