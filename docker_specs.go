@@ -3,6 +3,7 @@ package GoLib
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/mount"
@@ -36,7 +37,7 @@ func CreateServiceSpec(
 	networks []string,
 	secrets []string,
 	volumes map[string]string,
-	ports []swarm.PortConfig,
+	ports map[string]string,
 ) (swarm.ServiceSpec, *client.Client) {
 
 	cli := GetDockerClient()
@@ -51,10 +52,11 @@ func CreateServiceSpec(
 	}
 
 	networkConfigs := []swarm.NetworkAttachmentConfig{}
+	alias := LastPartAfterSlash(imageName)
 	for _, network := range networks {
 		networkConfigs = append(networkConfigs, swarm.NetworkAttachmentConfig{
 			Target:  network,
-			Aliases: []string{imageName},
+			Aliases: []string{alias},
 		})
 	}
 
@@ -86,6 +88,24 @@ func CreateServiceSpec(
 		})
 	}
 
+	portConfigs := []swarm.PortConfig{}
+	for published, target := range ports {
+		publishedPort, err := strconv.ParseUint(published, 10, 16)
+		if err != nil {
+			log.Fatalf("Invalid published port %s: %v", published, err)
+		}
+		targetPort, err := strconv.ParseUint(target, 10, 16)
+		if err != nil {
+			log.Fatalf("Invalid target port %s: %v", target, err)
+		}
+
+		portConfigs = append(portConfigs, swarm.PortConfig{
+			Protocol:      swarm.PortConfigProtocolTCP,
+			PublishedPort: uint32(publishedPort),
+			TargetPort:    uint32(targetPort),
+		})
+	}
+
 	return swarm.ServiceSpec{
 		Annotations: swarm.Annotations{
 			Name: imageName,
@@ -101,7 +121,7 @@ func CreateServiceSpec(
 		},
 		EndpointSpec: &swarm.EndpointSpec{
 			Mode:  swarm.ResolutionModeVIP,
-			Ports: ports,
+			Ports: portConfigs,
 		},
 	}, cli
 }
