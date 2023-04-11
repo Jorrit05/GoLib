@@ -19,14 +19,32 @@ func GetEtcdClient() *clientv3.Client {
 	return cli
 }
 
-// Create object in Etcd with a default 5 second lease
-func CreateEtcdLeaseObject(etcdClient *clientv3.Client, key string, value string, leaseTime int64) {
-	var actualLeaseTime int64 = leaseTime
-	if leaseTime == 0 {
-		actualLeaseTime = 5
+type leaseOptions struct {
+	leaseTime int64
+}
+
+type Option func(*leaseOptions)
+
+func LeaseTime(leaseTime int64) Option {
+	return func(options *leaseOptions) {
+		options.leaseTime = leaseTime
 	}
+}
+
+// Create object in Etcd with a default 5 second lease
+func CreateEtcdLeaseObject(etcdClient *clientv3.Client, key string, value string, opts ...Option) {
+	// Default options
+	options := &leaseOptions{
+		leaseTime: 5,
+	}
+
+	// Apply custom options
+	for _, opt := range opts {
+		opt(options)
+	}
+
 	// Create a lease with a 5-second TTL
-	lease, err := etcdClient.Grant(context.Background(), actualLeaseTime)
+	lease, err := etcdClient.Grant(context.Background(), options.leaseTime)
 	if err != nil {
 		log.Fatal(err)
 	}
