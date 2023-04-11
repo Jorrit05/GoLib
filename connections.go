@@ -41,7 +41,9 @@ func getConnectionToRabbitMq() (*amqp.Connection, *amqp.Channel, error) {
 // messages with the specified routing key.
 // It returns a channel to receive delivery messages, the AMQP connection, and channel objects, and an error if any occurs during the setup.
 // The connection string and the routing key are passed as arguments.
-// The service name is used to declare the queue.
+// The service name in format '<name>_service' is used to declare the queue.
+//
+// The routingKey service.<name> is used when binding the queue to the exchange, the exchange will publish messages to all queues that match the routingkey pattern
 func SetupConnection(serviceName string, routingKey string, startConsuming bool) (<-chan amqp.Delivery, *amqp.Connection, *amqp.Channel, error) {
 	conn, channel, _ := getConnectionToRabbitMq()
 
@@ -118,6 +120,7 @@ func StartMessageLoop(fn serviceFunc, messages <-chan amqp.Delivery, channel *am
 	// Message loop stays alive
 	for msg := range messages {
 		log.Printf("StartMessageLoop: Received message: %v", string(msg.Body))
+
 		newMsg, err := fn(msg)
 
 		if err != nil {

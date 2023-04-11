@@ -4,15 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
-)
 
-func StartLog() *os.File {
-	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	return f
-}
+	"github.com/google/uuid"
+)
 
 func ReadFile(fileName string) (string, error) {
 	data, err := os.ReadFile(fileName)
@@ -73,4 +67,20 @@ func GetDefaultRoutingKey(serviceName string) string {
 func LastPartAfterSlash(s string) string {
 	splitted := strings.Split(s, "/")
 	return splitted[len(splitted)-1]
+}
+
+// GenerateGuid returns a UUID string with the specified number of parts separated by dashes.
+// If parts is 0 or greater than or equal to the total number of parts in the UUID,
+// the full UUID string is returned.
+func GenerateGuid(parts int) string {
+
+	id := uuid.New()
+	split := strings.Split(id.String(), "-")
+
+	if parts == 0 || parts >= len(split)-1 {
+		return id.String()
+	}
+
+	// Join the desired number of parts back together and return the resulting string
+	return strings.Join(split[:parts], "-")
 }
