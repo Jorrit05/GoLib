@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"strings"
 	"time"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -72,62 +71,34 @@ func CreateEtcdLeaseObject(etcdClient *clientv3.Client, key string, value string
 	}
 }
 
-// Take a given docker stack yaml file, and save all pertinent info, like the
+// Take a given docker stack yaml file, and save all pertinent info (struct MicroServiceData), like the
 // required env variable and volumes etc. Into etcd.
-func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string) (map[string]CreateServicePayload, error) {
+func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string) (map[string]MicroServiceDetails, error) {
 	yamlFile, err := ioutil.ReadFile(fileLocation)
 	if err != nil {
 		log.Errorf("Failed to read the YAML file: %v", err)
 	}
 
-	service := ServiceYAML{}
+	service := MicroServiceData{}
 	err = yaml.Unmarshal(yamlFile, &service)
 	if err != nil {
 		log.Errorf("Failed to unmarshal the YAML file: %v", err)
 	}
 
-	processedServices := make(map[string]CreateServicePayload)
+	processedServices := make(map[string]MicroServiceDetails)
 
-	for serviceName, serviceDetails := range service.Services {
-		imageName, tag := SplitImageAndTag(serviceDetails.Image)
-
-		// Volumes and ports are lists in YAML (and json), but need to be maps
-		// for working with the dockerspec
-		volumes := make(map[string]string)
-		for _, volume := range serviceDetails.Volumes {
-			parts := strings.Split(volume, ":")
-			if len(parts) == 2 {
-				volumes[parts[0]] = parts[1]
-			}
-		}
-
-		ports := make(map[string]string)
-		for _, port := range serviceDetails.Ports {
-			parts := strings.Split(port, ":")
-			if len(parts) == 2 {
-				ports[parts[0]] = parts[1]
-			}
-		}
-
-		payload := CreateServicePayload{
-			ImageName: imageName,
-			Tag:       tag,
-			EnvVars:   serviceDetails.EnvVars,
-			Networks:  serviceDetails.Networks,
-			Secrets:   serviceDetails.Secrets,
-			Volumes:   volumes,
-			Ports:     ports,
-			Deploy:    serviceDetails.Deploy,
-		}
+	for serviceName, payload := range service.Services {
 
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
 			log.Errorf("Failed to marshal the payload to JSON: %v", err)
+			return nil, err
 		}
 
 		_, err = etcdClient.Put(context.Background(), fmt.Sprintf("/microservices/%s", serviceName), string(jsonPayload))
 		if err != nil {
 			log.Errorf("Failed creating service config in etcd: %s", err)
+			return nil, err
 		}
 		processedServices[serviceName] = payload
 

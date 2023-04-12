@@ -29,38 +29,10 @@ type CreateServicePayload struct {
 	Deploy    Deploy            `json:"deploy,omitempty" yaml:"deploy"`
 }
 
-type ServiceYAML struct {
-	Services map[string]ServiceYAMLDetails `yaml:"services"`
-}
-
-type ServiceYAMLDetails struct {
-	Image    string            `yaml:"image"`
-	Hostname string            `yaml:"hostname"`
-	Networks []string          `yaml:"networks"`
-	Ports    []string          `yaml:"ports"`
-	EnvVars  map[string]string `yaml:"environment"`
-	Secrets  []string          `yaml:"secrets"`
-	Volumes  []string          `yaml:"volumes"`
-	Deploy   Deploy            `yaml:"deploy,omitempty"`
-}
-
 type Deploy struct {
 	Replicas  int       `json:"replicas,omitempty" yaml:"replicas,omitempty"`
 	Placement Placement `json:"placement,omitempty" yaml:"placement,omitempty"`
 	Resources Resources `json:"resources,omitempty" yaml:"resources,omitempty"`
-}
-
-type Placement struct {
-	Constraints []string `json:"constraints,omitempty" yaml:"constraints,omitempty"`
-}
-
-type Resources struct {
-	Reservations Resource `json:"reservations,omitempty" yaml:"reservations,omitempty"`
-	Limits       Resource `json:"limits,omitempty" yaml:"limits,omitempty"`
-}
-
-type Resource struct {
-	Memory string `json:"memory,omitempty" yaml:"memory,omitempty"`
 }
 
 type Service struct {
