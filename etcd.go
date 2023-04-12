@@ -63,5 +63,6 @@ func CreateEtcdLeaseObject(etcdClient *clientv3.Client, key string, value string
 
 	// Periodically refresh the lease
 	for range leaseKeepAlive {
+		log.Debugf("Lease refreshed on key: %s", key)
 	}
 }
