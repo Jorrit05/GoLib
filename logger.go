@@ -24,7 +24,7 @@ func InitLogger(serviceName string) (*logrus.Entry, *os.File) {
 		// Only log the Info level severity or above.
 		logrus.SetLevel(logrus.WarnLevel)
 	} else {
-		logrus.SetLevel(logrus.DebugLevel)
+		logrus.SetLevel(logrus.InfoLevel)
 	}
 
 	// Set Logrus output to the log file
