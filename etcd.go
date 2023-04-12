@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -143,4 +144,31 @@ func GetValuesWithPrefix(etcdClient *clientv3.Client, prefix string) (map[string
 		values[string(kv.Key)] = string(kv.Value)
 	}
 	return values, nil
+}
+
+func GetMicroServiceData(etcdClient *clientv3.Client) (MicroServiceData, error) {
+	microservices, err := GetValuesWithPrefix(etcdClient, "/microservices/")
+	if err != nil {
+		log.Warn(err)
+	}
+
+	msData := MicroServiceData{
+		Services: make(map[string]MicroServiceDetails),
+	}
+
+	for key, value := range microservices {
+		var msDataDetails MicroServiceDetails
+
+		err = json.Unmarshal([]byte(value), &msDataDetails)
+		if err != nil {
+			log.Printf("Error unmarshalling JSON: %v", err)
+			return msData, err
+		}
+
+		// Trim the '/microservices/' prefix from the key
+		trimmedKey := strings.TrimPrefix(key, "/microservices/")
+		msData.Services[trimmedKey] = msDataDetails
+	}
+
+	return msData, nil
 }
