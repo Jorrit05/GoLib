@@ -33,7 +33,7 @@ func GetDockerClient() *client.Client {
 
 func CreateServiceSpec(
 	imageName string,
-	imageVersion string,
+	tag string,
 	envVars map[string]string,
 	networks []string,
 	secrets []string,
@@ -42,8 +42,8 @@ func CreateServiceSpec(
 	cli *client.Client,
 ) swarm.ServiceSpec {
 
-	if imageVersion == "" {
-		imageVersion = "latest"
+	if tag == "" {
+		tag = "latest"
 	}
 
 	env := []string{}
@@ -82,7 +82,7 @@ func CreateServiceSpec(
 	mounts := []mount.Mount{}
 	for src, target := range volumes {
 		mounts = append(mounts, mount.Mount{
-			Type:   mount.TypeBind,
+			Type:   mount.TypeVolume,
 			Source: src,
 			Target: target,
 		})
@@ -112,7 +112,7 @@ func CreateServiceSpec(
 		},
 		TaskTemplate: swarm.TaskSpec{
 			ContainerSpec: &swarm.ContainerSpec{
-				Image:   imageName + ":" + imageVersion,
+				Image:   imageName + ":" + tag,
 				Env:     env,
 				Secrets: secretRefs,
 				Mounts:  mounts,
