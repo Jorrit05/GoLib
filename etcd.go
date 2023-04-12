@@ -105,3 +105,42 @@ func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string) (map[strin
 	}
 	return processedServices, nil
 }
+
+func GetValueFromEtcd(etcdClient *clientv3.Client, key string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := etcdClient.Get(ctx, key)
+	if err != nil {
+		return "", fmt.Errorf("failed to get key %s from etcd: %v", key, err)
+	}
+
+	if len(resp.Kvs) == 0 {
+		return "", fmt.Errorf("key %s not found in etcd", key)
+	}
+
+	value := string(resp.Kvs[0].Value)
+	return value, nil
+}
+
+func GetValuesWithPrefix(etcdClient *clientv3.Client, prefix string) (map[string]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := etcdClient.Get(ctx, prefix, clientv3.WithPrefix())
+	if err != nil {
+		log.Errorf("failed to get keys with prefix %s from etcd: %v", prefix, err)
+		return nil, err
+	}
+
+	if len(resp.Kvs) == 0 {
+		log.Errorf("no keys with prefix %s found in etcd", prefix)
+		return nil, err
+	}
+
+	values := make(map[string]string)
+	for _, kv := range resp.Kvs {
+		values[string(kv.Key)] = string(kv.Value)
+	}
+	return values, nil
+}
