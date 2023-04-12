@@ -73,3 +73,30 @@ func TestLastPartAfterSlash(t *testing.T) {
 		})
 	}
 }
+
+func TestSplitImageAndTag(t *testing.T) {
+	testCases := []struct {
+		fullImageName string
+		expectedImage string
+		expectedTag   string
+	}{
+		{"anonymize_service:latest", "anonymize_service", "latest"},
+		{"anonymize_service", "anonymize_service", "latest"},
+		{"anonymize_service:v1.0.0", "anonymize_service", "v1.0.0"},
+		{"anonymize_service:1.0", "anonymize_service", "1.0"},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.fullImageName, func(t *testing.T) {
+			image, tag := SplitImageAndTag(testCase.fullImageName)
+
+			if image != testCase.expectedImage {
+				t.Errorf("Expected image '%s', got '%s'", testCase.expectedImage, image)
+			}
+
+			if tag != testCase.expectedTag {
+				t.Errorf("Expected tag '%s', got '%s'", testCase.expectedTag, tag)
+			}
+		})
+	}
+}

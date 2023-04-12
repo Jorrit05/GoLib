@@ -84,3 +84,11 @@ func GenerateGuid(parts int) string {
 	// Join the desired number of parts back together and return the resulting string
 	return strings.Join(split[:parts], "-")
 }
+
+func SplitImageAndTag(fullImageName string) (string, string) {
+	splitted := strings.Split(fullImageName, ":")
+	if len(splitted) == 1 {
+		return splitted[0], "latest"
+	}
+	return splitted[0], splitted[1]
+}
