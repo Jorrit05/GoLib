@@ -1,6 +1,8 @@
 package GoLib
 
-import "strings"
+import (
+	"strings"
+)
 
 // Unmarshal a docker stack file into a struct of type YamlConfig.
 // Will contain a list of all externally declared networks, secrets and volumes
