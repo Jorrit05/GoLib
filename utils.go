@@ -92,3 +92,20 @@ func SplitImageAndTag(fullImageName string) (string, string) {
 	}
 	return splitted[0], splitted[1]
 }
+
+func SliceDifferenceString(sliceA, sliceB []string) []string {
+	diff := make([]string, 0)
+	elementsInB := make(map[string]bool)
+
+	for _, item := range sliceB {
+		elementsInB[item] = true
+	}
+
+	for _, item := range sliceA {
+		if !elementsInB[item] {
+			diff = append(diff, item)
+		}
+	}
+
+	return diff
+}

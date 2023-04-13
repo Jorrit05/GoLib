@@ -172,3 +172,30 @@ func GetMicroServiceData(etcdClient *clientv3.Client) (MicroServiceData, error) 
 
 	return msData, nil
 }
+
+func GetAvailableAgents(etcdClient *clientv3.Client) (AgentData, error) {
+	agents, err := GetKeyValueMap(etcdClient, "/agents/")
+	if err != nil {
+		log.Printf("%s", err)
+	}
+
+	agentData := AgentData{
+		Agents: make(map[string]AgentDetails),
+	}
+
+	for key, value := range agents {
+		var agentDetails AgentDetails
+
+		err = json.Unmarshal([]byte(value), &agentDetails)
+		if err != nil {
+			log.Printf("Error unmarshalling JSON: %v", err)
+			return agentData, err
+		}
+
+		// Trim the '/microservices/' prefix from the key
+		trimmedKey := strings.TrimPrefix(key, "/agents/")
+		agentData.Agents[trimmedKey] = agentDetails
+	}
+
+	return agentData, nil
+}

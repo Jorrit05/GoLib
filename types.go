@@ -7,7 +7,11 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
-type EnvironmentConfig struct {
+type AgentData struct {
+	Agents map[string]AgentDetails `yaml:"services"`
+}
+
+type AgentDetails struct {
 	Name             string    `json:"name"`
 	ActiveServices   *[]string `json:"services"`
 	ActiveSince      *time.Time
@@ -16,6 +20,13 @@ type EnvironmentConfig struct {
 	RoutingKeyInput  string
 	InputQueueName   string
 	ServiceName      string
+}
+
+type OrchestratorRequest struct {
+	Type         string   `json:"type"`
+	Providers    []string `json:"providers"`
+	Query        string   `json:"query"`
+	Architecture string   `json:"architecture"`
 }
 
 type CreateServicePayload struct {
