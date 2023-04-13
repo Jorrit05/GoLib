@@ -6,6 +6,5 @@ type Reasoner struct {
 }
 
 type RequiredService struct {
-	ServiceName: string `json:"service_name"`
-	// ServiceName: string `json:"service_name"`
+	ServiceName string `json:"service_name"`
 }

@@ -72,12 +72,7 @@ func CreateEtcdLeaseObject(etcdClient *clientv3.Client, key string, value string
 	}
 }
 
-// Take a given docker stack yaml file, and save all pertinent info (struct MicroServiceData), like the
-// required env variable and volumes etc. Into etcd.
-func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string, etcdPath string) (map[string]MicroServiceDetails, error) {
-	if etcdPath == "" {
-		etcdPath = "/microservices"
-	}
+func UnmarshalStackFile(fileLocation string) MicroServiceData {
 
 	yamlFile, err := ioutil.ReadFile(fileLocation)
 	if err != nil {
@@ -89,6 +84,17 @@ func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string, etcdPath s
 	if err != nil {
 		log.Errorf("Failed to unmarshal the YAML file: %v", err)
 	}
+	return service
+}
+
+// Take a given docker stack yaml file, and save all pertinent info (struct MicroServiceData), like the
+// required env variable and volumes etc. Into etcd.
+func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string, etcdPath string) (map[string]MicroServiceDetails, error) {
+	if etcdPath == "" {
+		etcdPath = "/microservices"
+	}
+
+	var service MicroServiceData = UnmarshalStackFile(fileLocation)
 
 	processedServices := make(map[string]MicroServiceDetails)
 
