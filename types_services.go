@@ -17,4 +17,5 @@ type AgentDetails struct {
 	RoutingKeyInput  string
 	InputQueueName   string
 	ServiceName      string
+	AgentDetails     MicroServiceDetails
 }
