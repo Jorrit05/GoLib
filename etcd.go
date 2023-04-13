@@ -146,56 +146,74 @@ func GetKeyValueMap(etcdClient *clientv3.Client, pathName string) (map[string]st
 	return values, nil
 }
 
-func GetMicroServiceData(etcdClient *clientv3.Client) (MicroServiceData, error) {
-	microservices, err := GetKeyValueMap(etcdClient, "/microservices/")
+type DataProcessorFunc func(key, value string) error
+
+func GetData(etcdClient *clientv3.Client, path string, processor DataProcessorFunc) error {
+	data, err := GetKeyValueMap(etcdClient, path)
 	if err != nil {
 		log.Warn(err)
+		return err
 	}
 
+	for key, value := range data {
+		err = processor(key, value)
+		if err != nil {
+			log.Printf("Error processing data: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func processMicroServiceData(msData *MicroServiceData, key, value string) error {
+	var msDataDetails MicroServiceDetails
+
+	err := json.Unmarshal([]byte(value), &msDataDetails)
+	if err != nil {
+		return err
+	}
+
+	trimmedKey := strings.TrimPrefix(key, "/microservices/")
+	msData.Services[trimmedKey] = msDataDetails
+
+	return nil
+}
+
+func processAgentData(agentData *AgentData, key, value string) error {
+	var agentDetails AgentDetails
+
+	err := json.Unmarshal([]byte(value), &agentDetails)
+	if err != nil {
+		return err
+	}
+
+	trimmedKey := strings.TrimPrefix(key, "/agents/")
+	agentData.Agents[trimmedKey] = agentDetails
+
+	return nil
+}
+
+func GetMicroServiceData(etcdClient *clientv3.Client) (MicroServiceData, error) {
 	msData := MicroServiceData{
 		Services: make(map[string]MicroServiceDetails),
 	}
 
-	for key, value := range microservices {
-		var msDataDetails MicroServiceDetails
+	err := GetData(etcdClient, "/microservices/", func(key, value string) error {
+		return processMicroServiceData(&msData, key, value)
+	})
 
-		err = json.Unmarshal([]byte(value), &msDataDetails)
-		if err != nil {
-			log.Printf("Error unmarshalling JSON: %v", err)
-			return msData, err
-		}
-
-		// Trim the '/microservices/' prefix from the key
-		trimmedKey := strings.TrimPrefix(key, "/microservices/")
-		msData.Services[trimmedKey] = msDataDetails
-	}
-
-	return msData, nil
+	return msData, err
 }
 
 func GetAvailableAgents(etcdClient *clientv3.Client) (AgentData, error) {
-	agents, err := GetKeyValueMap(etcdClient, "/agents/")
-	if err != nil {
-		log.Printf("%s", err)
-	}
-
 	agentData := AgentData{
 		Agents: make(map[string]AgentDetails),
 	}
 
-	for key, value := range agents {
-		var agentDetails AgentDetails
+	err := GetData(etcdClient, "/agents/", func(key, value string) error {
+		return processAgentData(&agentData, key, value)
+	})
 
-		err = json.Unmarshal([]byte(value), &agentDetails)
-		if err != nil {
-			log.Printf("Error unmarshalling JSON: %v", err)
-			return agentData, err
-		}
-
-		// Trim the '/microservices/' prefix from the key
-		trimmedKey := strings.TrimPrefix(key, "/agents/")
-		agentData.Agents[trimmedKey] = agentDetails
-	}
-
-	return agentData, nil
+	return agentData, err
 }
