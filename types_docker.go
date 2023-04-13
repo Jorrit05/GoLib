@@ -1,5 +1,10 @@
 package GoLib
 
+import (
+	"fmt"
+	"strings"
+)
+
 type Service struct {
 	Services map[string]CreateServicePayload `yaml:"services"`
 }
@@ -52,4 +57,36 @@ type ExternalDockerConfig struct {
 	Networks []string `yaml:"networks"`
 	Volumes  []string `yaml:"volumes"`
 	Secrets  []string `yaml:"secrets"`
+}
+
+func (c CreateServicePayload) String() string {
+	var sb strings.Builder
+
+	sb.WriteString(fmt.Sprintf("ImageName: %s\n", c.ImageName))
+	sb.WriteString(fmt.Sprintf("Tag: %s\n", c.Tag))
+	sb.WriteString("EnvVars:\n")
+	for k, v := range c.EnvVars {
+		sb.WriteString(fmt.Sprintf("  %s: %s\n", k, v))
+	}
+	sb.WriteString(fmt.Sprintf("Networks: %v\n", c.Networks))
+	sb.WriteString(fmt.Sprintf("Secrets: %v\n", c.Secrets))
+	sb.WriteString("Volumes:\n")
+	for k, v := range c.Volumes {
+		sb.WriteString(fmt.Sprintf("  %s: %s\n", k, v))
+	}
+	sb.WriteString("Ports:\n")
+	for k, v := range c.Ports {
+		sb.WriteString(fmt.Sprintf("  %s: %s\n", k, v))
+	}
+	sb.WriteString(fmt.Sprintf("Deploy: \n"))
+	sb.WriteString(fmt.Sprintf("  Replicas: %d\n", c.Deploy.Replicas))
+	sb.WriteString(fmt.Sprintf("  Placement: \n"))
+	sb.WriteString(fmt.Sprintf("    Constraints: %v\n", c.Deploy.Placement.Constraints))
+	sb.WriteString(fmt.Sprintf("  Resources: \n"))
+	sb.WriteString(fmt.Sprintf("    Reservations: \n"))
+	sb.WriteString(fmt.Sprintf("      Memory: %s\n", c.Deploy.Resources.Reservations.Memory))
+	sb.WriteString(fmt.Sprintf("    Limits: \n"))
+	sb.WriteString(fmt.Sprintf("      Memory: %s\n", c.Deploy.Resources.Limits.Memory))
+
+	return sb.String()
 }

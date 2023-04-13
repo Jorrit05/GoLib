@@ -74,7 +74,11 @@ func CreateEtcdLeaseObject(etcdClient *clientv3.Client, key string, value string
 
 // Take a given docker stack yaml file, and save all pertinent info (struct MicroServiceData), like the
 // required env variable and volumes etc. Into etcd.
-func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string) (map[string]MicroServiceDetails, error) {
+func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string, etcdPath string) (map[string]MicroServiceDetails, error) {
+	if etcdPath == "" {
+		etcdPath = "/microservices"
+	}
+
 	yamlFile, err := ioutil.ReadFile(fileLocation)
 	if err != nil {
 		log.Errorf("Failed to read the YAML file: %v", err)
@@ -96,7 +100,7 @@ func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string) (map[strin
 			return nil, err
 		}
 
-		_, err = etcdClient.Put(context.Background(), fmt.Sprintf("/microservices/%s", serviceName), string(jsonPayload))
+		_, err = etcdClient.Put(context.Background(), fmt.Sprintf("%s/%s", etcdPath, serviceName), string(jsonPayload))
 		if err != nil {
 			log.Errorf("Failed creating service config in etcd: %s", err)
 			return nil, err
