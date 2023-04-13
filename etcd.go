@@ -124,18 +124,18 @@ func GetValueFromEtcd(etcdClient *clientv3.Client, key string) (string, error) {
 	return value, nil
 }
 
-func GetValuesWithPrefix(etcdClient *clientv3.Client, prefix string) (map[string]string, error) {
+func GetKeyValueMap(etcdClient *clientv3.Client, pathName string) (map[string]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := etcdClient.Get(ctx, prefix, clientv3.WithPrefix())
+	resp, err := etcdClient.Get(ctx, pathName, clientv3.WithPrefix())
 	if err != nil {
-		log.Errorf("failed to get keys with prefix %s from etcd: %v", prefix, err)
+		log.Errorf("failed to get keys with prefix %s from etcd: %v", pathName, err)
 		return nil, err
 	}
 
 	if len(resp.Kvs) == 0 {
-		log.Errorf("no keys with prefix %s found in etcd", prefix)
+		log.Errorf("no keys with prefix %s found in etcd", pathName)
 		return nil, err
 	}
 
@@ -147,7 +147,7 @@ func GetValuesWithPrefix(etcdClient *clientv3.Client, prefix string) (map[string
 }
 
 func GetMicroServiceData(etcdClient *clientv3.Client) (MicroServiceData, error) {
-	microservices, err := GetValuesWithPrefix(etcdClient, "/microservices/")
+	microservices, err := GetKeyValueMap(etcdClient, "/microservices/")
 	if err != nil {
 		log.Warn(err)
 	}
