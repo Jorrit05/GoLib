@@ -1,11 +1,11 @@
 package GoLib
 
-type Reasoner struct {
+type Requestor struct {
 	RequestorId      string   `json:"requestor_id"`
 	CurrentArchetype string   `json:"current_archetype"`
 	AllowedPartners  []string `json:"allowed_partners"`
 }
 
-type ReasonerConfig struct {
-	ReasonerConfig []Reasoner `json:"reasoner_config"`
+type RequestorConfig struct {
+	ReasonerConfig []Requestor `json:"requestor_config"`
 }
