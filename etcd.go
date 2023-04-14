@@ -156,78 +156,13 @@ func GetKeyValueMap(etcdClient *clientv3.Client, pathName string) (map[string]st
 	return values, nil
 }
 
-type DataProcessorFunc func(key, value string) error
-
-func GetData(etcdClient *clientv3.Client, path string, processor DataProcessorFunc) error {
-	data, err := GetKeyValueMap(etcdClient, path)
-	if err != nil {
-		log.Warn(err)
-		return err
-	}
-
-	for key, value := range data {
-		err = processor(key, value)
-		if err != nil {
-			log.Printf("Error processing data: %v", err)
-			return err
-		}
-	}
-
-	return nil
-}
-
-func processMicroServiceData(msData *MicroServiceData, key, value string) error {
-	var msDataDetails MicroServiceDetails
-
-	err := json.Unmarshal([]byte(value), &msDataDetails)
-	if err != nil {
-		return err
-	}
-
-	trimmedKey := strings.TrimPrefix(key, "/microservices/")
-	msData.Services[trimmedKey] = msDataDetails
-
-	return nil
-}
-
-func processAgentData(agentData *AgentData, key, value string) error {
-	var agentDetails AgentDetails
-
-	err := json.Unmarshal([]byte(value), &agentDetails)
-	if err != nil {
-		return err
-	}
-
-	trimmedKey := strings.TrimPrefix(key, "/agents/")
-	agentData.Agents[trimmedKey] = agentDetails
-
-	return nil
-}
-
-func GetMicroServiceData(etcdClient *clientv3.Client) (MicroServiceData, error) {
-	msData := MicroServiceData{
-		Services: make(map[string]MicroServiceDetails),
-	}
-
-	err := GetData(etcdClient, "/microservices/", func(key, value string) error {
-		return processMicroServiceData(&msData, key, value)
-	})
-
-	return msData, err
-}
-
-func GetAvailableAgents(etcdClient *clientv3.Client) (AgentData, error) {
-	agentData := AgentData{
-		Agents: make(map[string]AgentDetails),
-	}
-
-	err := GetData(etcdClient, "/agents/", func(key, value string) error {
-		return processAgentData(&agentData, key, value)
-	})
-
-	return agentData, err
-}
-
+// RegisterJSONArray takes a JSON array, unmarshals it into the target Iterable,
+// and stores each element in the etcd key-value store.
+//   - T is the underlying struct type of the target.
+//   - jsonContent is the byte array containing the JSON content.
+//   - target should be an instance of a struct that implements the Iterable and NameGetter interfaces.
+//   - etcdClient is an instance of the etcd client.
+//   - key is the etcd key prefix where the elements will be stored.
 func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *clientv3.Client, key string) error {
 	err := json.Unmarshal(jsonContent, &target)
 	if err != nil {
@@ -249,4 +184,66 @@ func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *c
 	}
 
 	return nil
+}
+
+// GetAndUnmarshalJSON retrieves a JSON value from etcd and unmarshals it into the target struct.
+// - T should be a pointer to a struct type.
+// - etcdClient is an instance of the etcd client.
+// - key is the etcd key where the JSON value is stored.
+// - target should be a pointer to an instance of the target struct.
+func GetAndUnmarshalJSON[T any](etcdClient *clientv3.Client, key string, target T) error {
+	// Get the value from etcd.
+	resp, err := etcdClient.Get(context.Background(), key)
+	if err != nil {
+		return fmt.Errorf("failed to get value from etcd: %v", err)
+	}
+
+	if len(resp.Kvs) == 0 {
+		return fmt.Errorf("no value found for key: %s", key)
+	}
+
+	// Unmarshal the JSON value into the target struct.
+	err = json.Unmarshal(resp.Kvs[0].Value, target)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal JSON: %v", err)
+	}
+
+	return nil
+}
+
+// T should be a struct type.
+// Pass a full path (like /microservices/) and get a Map back of all entries in that folder.
+//
+// See etcd_test.go for examples
+func GetAndUnmarshalJSONMap[T any](etcdClient *clientv3.Client, prefix string) (map[string]T, error) {
+	// Get all key-value pairs under the specified prefix.
+	resp, err := etcdClient.Get(context.Background(), prefix, clientv3.WithPrefix())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get values from etcd: %v", err)
+	}
+
+	// Initialize an empty map to store the unmarshaled structs.
+	result := make(map[string]T)
+
+	// Iterate through the key-value pairs and unmarshal the values into structs.
+	for _, kv := range resp.Kvs {
+		key := string(kv.Key)
+		// Extract the map key from the etcd key.
+		mapKey := strings.TrimPrefix(key, prefix)
+		if mapKey == "" {
+			continue
+		}
+
+		// Unmarshal the JSON value into the target struct.
+		var target T
+		err = json.Unmarshal(kv.Value, &target)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal JSON for key %s: %v", key, err)
+		}
+
+		// Add the unmarshaled struct to the result map.
+		result[mapKey] = target
+	}
+
+	return result, nil
 }

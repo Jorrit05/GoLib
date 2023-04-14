@@ -50,7 +50,7 @@ func TestSetMicroservicesEtcd(t *testing.T) {
 	// Add more checks for other services if necessary
 }
 
-func TestGetMicroServiceData(t *testing.T) {
+func TestGetAndUnmarshalJSON(t *testing.T) {
 	cli := setupEtcdClient(t)
 	defer cli.Close()
 
@@ -61,35 +61,44 @@ func TestGetMicroServiceData(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test GetMicroServiceData
-	msData, err := GetMicroServiceData(cli)
+	var msData MicroServiceDetails
+	err = GetAndUnmarshalJSON(cli, "/microservices/test-service", &msData)
 	require.NoError(t, err)
-	assert.NotNil(t, msData.Services["test-service"])
-	assert.Equal(t, "test-tag", msData.Services["test-service"].Tag)
-	assert.Equal(t, "test-image", msData.Services["test-service"].Image)
+	assert.NotNil(t, msData)
+	assert.Equal(t, "test-tag", msData.Tag)
+	assert.Equal(t, "test-image", msData.Image)
 
 	// Clean up test data from etcd
 	_, err = cli.Delete(ctx, "/microservices/test-service")
 	require.NoError(t, err)
 }
-
-func TestGetAvailableAgents(t *testing.T) {
+func TestGetAndUnmarshalJSONMap(t *testing.T) {
 	cli := setupEtcdClient(t)
 	defer cli.Close()
 
 	// Insert test data into etcd
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err := cli.Put(ctx, "/agents/test-agent", `{"name": "test-agent", "services": ["test-service"], "activeSince": "2023-01-01T12:00:00Z", "routingKeyOutput": "test-routing-key-output", "routingKeyInput": "test-routing-key-input", "inputQueueName": "test-input-queue-name", "serviceName": "test-service-name"}`)
+	_, err := cli.Put(ctx, "/testmicroservices/test-service1", `{"tag": "test-tag1", "image": "test-image1", "ports": {"8081": "80"}, "environment": {"VAR1": "value1"}, "secrets": ["test-secret1"], "volumes": {"data1": "/data1"}, "deploy": {"replicas": 1}}`)
+	require.NoError(t, err)
+	_, err = cli.Put(ctx, "/testmicroservices/test-service2", `{"tag": "test-tag2", "image": "test-image2", "ports": {"8082": "80"}, "environment": {"VAR2": "value2"}, "secrets": ["test-secret2"], "volumes": {"data2": "/data2"}, "deploy": {"replicas": 1}}`)
 	require.NoError(t, err)
 
-	// Test GetAvailableAgents
-	agentData, err := GetAvailableAgents(cli)
+	// Test GetAndUnmarshalJSONMap
+	msDataMap, err := GetAndUnmarshalJSONMap[MicroServiceDetails](cli, "/testmicroservices/")
 	require.NoError(t, err)
-	assert.NotNil(t, agentData.Agents["test-agent"])
-	assert.Equal(t, "test-agent", agentData.Agents["test-agent"].Name)
+	assert.NotNil(t, msDataMap)
+	assert.Equal(t, 2, len(msDataMap))
+
+	assert.Equal(t, "test-tag1", msDataMap["test-service1"].Tag)
+	assert.Equal(t, "test-image1", msDataMap["test-service1"].Image)
+
+	assert.Equal(t, "test-tag2", msDataMap["test-service2"].Tag)
+	assert.Equal(t, "test-image2", msDataMap["test-service2"].Image)
 
 	// Clean up test data from etcd
-	_, err = cli.Delete(ctx, "/agents/test-agent")
-
+	_, err = cli.Delete(ctx, "/testmicroservices/test-service1")
+	require.NoError(t, err)
+	_, err = cli.Delete(ctx, "/testmicroservices/test-service2")
 	require.NoError(t, err)
 }
