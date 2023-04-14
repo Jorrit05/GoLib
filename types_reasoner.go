@@ -1,5 +1,7 @@
 package GoLib
 
+var _ GoLib.NameGetter = (*GoLib.ArcheType)(nil)
+
 type Requestor struct {
 	Name             string   `json:"requestor_id"`
 	CurrentArchetype string   `json:"current_archetype"`

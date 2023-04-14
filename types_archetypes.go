@@ -24,3 +24,7 @@ func (c *ArcheTypes) Len() int {
 func (c *ArcheTypes) Get(index int) interface{} {
 	return c.Contents[index]
 }
+
+func (a *ArcheType) GetName() string {
+	return a.Name
+}
