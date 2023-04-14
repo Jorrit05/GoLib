@@ -5,3 +5,7 @@ type Reasoner struct {
 	CurrentArchetype string   `json:"current_archetype"`
 	AllowedPartners  []string `json:"allowed_partners"`
 }
+
+type ReasonerConfig struct {
+	ReasonerConfig []Reasoner `json:"reasoner_config"`
+}
