@@ -1,6 +1,13 @@
 package GoLib
 
-var _ GoLib.NameGetter = (*GoLib.ArcheType)(nil)
+type Iterable interface {
+	Len() int
+	Get(index int) interface{}
+}
+
+type NameGetter interface {
+	GetName() string
+}
 
 type Requestor struct {
 	Name             string   `json:"requestor_id"`
@@ -20,11 +27,6 @@ func (c *RequestorConfig) Get(index int) interface{} {
 	return c.Contents[index]
 }
 
-type Iterable interface {
-	Len() int
-	Get(index int) interface{}
-}
-
-type NameGetter interface {
-	GetName() string
+func (a *Requestor) GetName() string {
+	return a.Name
 }
