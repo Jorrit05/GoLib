@@ -227,3 +227,26 @@ func GetAvailableAgents(etcdClient *clientv3.Client) (AgentData, error) {
 
 	return agentData, err
 }
+
+func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *clientv3.Client, key string) error {
+	err := json.Unmarshal(jsonContent, &target)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal JSON content: %v", err)
+	}
+
+	for i := 0; i < target.Len(); i++ {
+		element := target.Get(i).(NameGetter) // Assert that element implements NameGetter
+
+		jsonRep, err := json.Marshal(element)
+		if err != nil {
+			log.Fatalf("Failed to Marshal config: %v", err)
+		}
+
+		_, err = etcdClient.Put(context.Background(), fmt.Sprintf("%s/%s", key, string(element.GetName())), string(jsonRep))
+		if err != nil {
+			log.Fatalf("Failed creating archetypesJSON in etcd: %s", err)
+		}
+	}
+
+	return nil
+}
