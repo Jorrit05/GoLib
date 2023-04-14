@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -74,7 +74,7 @@ func CreateEtcdLeaseObject(etcdClient *clientv3.Client, key string, value string
 
 func UnmarshalStackFile(fileLocation string) MicroServiceData {
 
-	yamlFile, err := ioutil.ReadFile(fileLocation)
+	yamlFile, err := os.ReadFile(fileLocation)
 	if err != nil {
 		log.Errorf("Failed to read the YAML file: %v", err)
 	}
@@ -166,7 +166,8 @@ func GetKeyValueMap(etcdClient *clientv3.Client, pathName string) (map[string]st
 func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *clientv3.Client, key string) error {
 	err := json.Unmarshal(jsonContent, &target)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal JSON content: %v", err)
+		log.Errorf("failed to unmarshal JSON content: %v", err)
+		return err
 	}
 
 	for i := 0; i < target.Len(); i++ {
@@ -174,12 +175,14 @@ func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *c
 
 		jsonRep, err := json.Marshal(element)
 		if err != nil {
-			log.Fatalf("Failed to Marshal config: %v", err)
+			log.Errorf("Failed to Marshal config: %v", err)
+			return err
 		}
 
 		_, err = etcdClient.Put(context.Background(), fmt.Sprintf("%s/%s", key, string(element.GetName())), string(jsonRep))
 		if err != nil {
-			log.Fatalf("Failed creating archetypesJSON in etcd: %s", err)
+			log.Errorf("Failed creating archetypesJSON in etcd: %s", err)
+			return err
 		}
 	}
 
@@ -195,17 +198,20 @@ func GetAndUnmarshalJSON[T any](etcdClient *clientv3.Client, key string, target 
 	// Get the value from etcd.
 	resp, err := etcdClient.Get(context.Background(), key)
 	if err != nil {
-		return fmt.Errorf("failed to get value from etcd: %v", err)
+		log.Errorf("failed to get value from etcd: %v", err)
+		return err
 	}
 
 	if len(resp.Kvs) == 0 {
-		return fmt.Errorf("no value found for key: %s", key)
+		log.Errorf("no value found for key: %s", key)
+		return err
 	}
 
 	// Unmarshal the JSON value into the target struct.
 	err = json.Unmarshal(resp.Kvs[0].Value, target)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal JSON: %v", err)
+		log.Errorf("failed to unmarshal JSON: %v", err)
+		return err
 	}
 
 	return nil
@@ -246,4 +252,26 @@ func GetAndUnmarshalJSONMap[T any](etcdClient *clientv3.Client, prefix string) (
 	}
 
 	return result, nil
+}
+
+// T is the struct type to be saved.
+// target is an instance of the struct.
+// etcdClient is an instance of the etcd client.
+// key is the etcd key where the value will be stored.
+func SaveStructToEtcd[T any](etcdClient *clientv3.Client, key string, target T) error {
+	// Marshal the target struct into a JSON representation
+	jsonRep, err := json.Marshal(target)
+	if err != nil {
+		log.Errorf("failed to marshal struct: %v", err)
+		return err
+	}
+
+	// Save the JSON representation to the etcd key-value store
+	_, err = etcdClient.Put(context.Background(), key, string(jsonRep))
+	if err != nil {
+		log.Errorf("failed to save struct to etcd: %v", err)
+		return err
+	}
+
+	return nil
 }
