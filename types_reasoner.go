@@ -22,3 +22,7 @@ type Iterable interface {
 	Len() int
 	Get(index int) interface{}
 }
+
+type NameGetter interface {
+	GetName() string
+}
