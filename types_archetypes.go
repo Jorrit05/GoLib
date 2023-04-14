@@ -1,7 +1,7 @@
 package GoLib
 
 type ArcheTypes struct {
-	ArcheTypes []ArcheType `json:"archetypes"`
+	Contents []ArcheType `json:"archetypes"`
 }
 
 type ArcheType struct {
@@ -15,4 +15,12 @@ type IoConfig struct {
 	Finish         string            `json:"finish"`
 	ThirdPartyName string            `json:"third_party_name"`
 	ThirdParty     map[string]string `json:"third_party"`
+}
+
+func (c *ArcheTypes) Len() int {
+	return len(c.Contents)
+}
+
+func (c *ArcheTypes) Get(index int) interface{} {
+	return c.Contents[index]
 }

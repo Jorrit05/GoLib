@@ -7,5 +7,18 @@ type Requestor struct {
 }
 
 type RequestorConfig struct {
-	ReasonerConfig []Requestor `json:"requestor_config"`
+	Contents []Requestor `json:"requestor_config"`
+}
+
+func (c *RequestorConfig) Len() int {
+	return len(c.Contents)
+}
+
+func (c *RequestorConfig) Get(index int) interface{} {
+	return c.Contents[index]
+}
+
+type Iterable interface {
+	Len() int
+	Get(index int) interface{}
 }
