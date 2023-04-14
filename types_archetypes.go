@@ -5,9 +5,9 @@ type ArcheTypes struct {
 }
 
 type ArcheType struct {
-	ArcheTypeName string   `json:"name"`
-	RequestType   string   `json:"request_type"`
-	IoConfig      IoConfig `json:"io_config"`
+	Name        string   `json:"name"`
+	RequestType string   `json:"request_type"`
+	IoConfig    IoConfig `json:"io_config"`
 }
 
 type IoConfig struct {
