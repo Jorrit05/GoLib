@@ -1,5 +1,7 @@
 package GoLib
 
+var _ NameGetter = (*Requestor)(nil)
+
 type Iterable interface {
 	Len() int
 	Get(index int) interface{}

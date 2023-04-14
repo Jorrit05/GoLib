@@ -1,5 +1,7 @@
 package GoLib
 
+var _ NameGetter = (*ArcheType)(nil)
+
 type ArcheTypes struct {
 	Contents []ArcheType `json:"archetypes"`
 }
