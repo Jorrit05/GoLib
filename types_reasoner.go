@@ -1,10 +1,7 @@
 package GoLib
 
 type Reasoner struct {
-	Archetype        string `json:"archetype"`
-	RequiredServices []RequiredService
-}
-
-type RequiredService struct {
-	ServiceName string `json:"service_name"`
+	RequestorId      string   `json:"requestor_id"`
+	CurrentArchetype string   `json:"current_archetype"`
+	AllowedPartners  []string `json:"allowed_partners"`
 }
