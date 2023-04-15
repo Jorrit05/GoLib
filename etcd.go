@@ -163,6 +163,8 @@ func GetKeyValueMap(etcdClient *clientv3.Client, pathName string) (map[string]st
 //   - target should be an instance of a struct that implements the Iterable and NameGetter interfaces.
 //   - etcdClient is an instance of the etcd client.
 //   - key is the etcd key prefix where the elements will be stored.
+//
+// Add Get(), .GetName() interfaces to struct that uses this. See archetypes/requestor as an example
 func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *clientv3.Client, key string) error {
 
 	err := json.Unmarshal(jsonContent, &target)
