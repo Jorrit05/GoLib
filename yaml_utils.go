@@ -47,7 +47,7 @@ func (ms *MicroServiceData) UnmarshalYAML(unmarshal func(interface{}) error) err
 		Services map[string]struct {
 			Image    string            `yaml:"image"`
 			EnvVars  map[string]string `yaml:"environment"`
-			Networks []string          `yaml:"networks"`
+			Networks Network           `yaml:"networks"`
 			Secrets  []string          `yaml:"secrets"`
 			Volumes  []string          `yaml:"volumes"`
 			Ports    []string          `yaml:"ports,omitempty"`
