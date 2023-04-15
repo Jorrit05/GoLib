@@ -36,7 +36,7 @@ func TestSetMicroservicesEtcd(t *testing.T) {
 	}
 
 	// Call SetMicroservicesEtcd with the mock client
-	processedServices, err := SetMicroservicesEtcd(mockClient, "./microservices_test.yml", "")
+	processedServices, err := SetMicroservicesEtcd(mockClient, "./microservices_test.yaml", "")
 	if err != nil {
 		t.Fatalf("Error setting microservices in etcd: %v", err)
 	}
