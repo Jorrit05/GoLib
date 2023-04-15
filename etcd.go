@@ -166,11 +166,16 @@ func GetKeyValueMap(etcdClient *clientv3.Client, pathName string) (map[string]st
 func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *clientv3.Client, key string) error {
 	log.Print("Starting RegisterJSONArray")
 
+	log.Info("Dump JSON:" + string(jsonContent))
+
 	err := json.Unmarshal(jsonContent, &target)
 	if err != nil {
+		log.Info("NO ERROR IN UMARSHAL")
+
 		log.Errorf("failed to unmarshal JSON content: %v", err)
 		return err
 	}
+	log.Info("Dump target:" + string(target.Len()))
 
 	for i := 0; i < target.Len(); i++ {
 		element := target.Get(i).(NameGetter) // Assert that element implements NameGetter
