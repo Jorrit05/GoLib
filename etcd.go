@@ -170,7 +170,7 @@ func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *c
 
 	err := json.Unmarshal(jsonContent, &target)
 	if err != nil {
-		log.Info("NO ERROR IN UMARSHAL")
+		log.Info("ERROR IN UMARSHAL")
 
 		log.Errorf("failed to unmarshal JSON content: %v", err)
 		return err
@@ -178,7 +178,9 @@ func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *c
 	log.Info("Dump target:" + string(target.Len()))
 
 	for i := 0; i < target.Len(); i++ {
+		log.Info("1")
 		element := target.Get(i).(NameGetter) // Assert that element implements NameGetter
+		log.Info("2")
 		log.Info("Element getname: " + element.GetName())
 		jsonRep, err := json.Marshal(element)
 		if err != nil {
