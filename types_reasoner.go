@@ -26,7 +26,7 @@ func (c *RequestorConfig) Len() int {
 }
 
 func (c *RequestorConfig) Get(index int) interface{} {
-	return &c.Contents[index]
+	return c.Contents[index]
 }
 
 func (a *Requestor) GetName() string {

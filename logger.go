@@ -34,9 +34,12 @@ func InitLogger(serviceName string) (*logrus.Entry, *os.File) {
 	// Disable to prevent 20%-40% overhead
 	logrus.SetReportCaller(true)
 
-	log = logrus.WithFields(logrus.Fields{
+	return logrus.WithFields(logrus.Fields{
 		"service": serviceName,
-	})
+	}), logFile
+}
 
-	return log, logFile
+// New function to flush the logs
+func FlushLogs(logFile *os.File) {
+	logFile.Sync()
 }
