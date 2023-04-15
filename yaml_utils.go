@@ -1,5 +1,9 @@
 package GoLib
 
+import (
+	"strings"
+)
+
 // Unmarshal a docker stack file into a struct of type YamlConfig.
 // Will contain a list of all externally declared networks, secrets and volumes
 func (c *ExternalDockerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -38,59 +42,60 @@ func (c *ExternalDockerConfig) UnmarshalYAML(unmarshal func(interface{}) error) 
 	return nil
 }
 
-// func (ms *MicroServiceData) UnmarshalYAML(unmarshal func(interface{}) error) error {
-// 	temp := struct {
-// 		Services map[string]struct {
-// 			Image    string            `yaml:"image"`
-// 			EnvVars  map[string]string `yaml:"environment"`
-// 			Networks Network           `yaml:"networks"`
-// 			Secrets  []string          `yaml:"secrets"`
-// 			Volumes  []string          `yaml:"volumes"`
-// 			Ports    []string          `yaml:"ports,omitempty"`
-// 			Deploy   Deploy            `yaml:"deploy"`
-// 		} `yaml:"services"`
-// 	}{}
+func (ms *MicroServiceData) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	temp := struct {
+		Services map[string]struct {
+			Image    string             `yaml:"image"`
+			EnvVars  map[string]string  `yaml:"environment"`
+			Networks map[string]Network `yaml:"networks"`
+			Secrets  []string           `yaml:"secrets"`
+			Volumes  []string           `yaml:"volumes"`
+			Ports    []string           `yaml:"ports,omitempty"`
+			Deploy   Deploy             `yaml:"deploy"`
+		} `yaml:"services"`
+	}{}
 
-// 	err := unmarshal(&temp)
-// 	if err != nil {
-// 		log.Errorf("Failed to unmarshal temp struct: %v", err)
+	err := unmarshal(&temp)
+	if err != nil {
+		log.Errorf("Failed to unmarshal temp struct: %v", err)
 
-// 		return err
-// 	}
+		return err
+	}
 
-// 	ms.Services = make(map[string]MicroServiceDetails)
+	ms.Services = make(map[string]MicroServiceDetails)
 
-// 	for serviceName, serviceDetails := range temp.Services {
-// 		imageName, tag := SplitImageAndTag(serviceDetails.Image)
+	for serviceName, serviceDetails := range temp.Services {
+		imageName, tag := SplitImageAndTag(serviceDetails.Image)
 
-// 		volumes := make(map[string]string)
-// 		for _, volume := range serviceDetails.Volumes {
-// 			parts := strings.Split(volume, ":")
-// 			if len(parts) == 2 {
-// 				volumes[parts[0]] = parts[1]
-// 			}
-// 		}
+		volumes := make(map[string]string)
+		for _, volume := range serviceDetails.Volumes {
+			parts := strings.Split(volume, ":")
+			if len(parts) == 2 {
+				volumes[parts[0]] = parts[1]
+			}
+		}
 
-// 		ports := make(map[string]string)
-// 		for _, port := range serviceDetails.Ports {
-// 			parts := strings.Split(port, ":")
-// 			if len(parts) == 2 {
-// 				ports[parts[0]] = parts[1]
-// 			}
-// 		}
+		ports := make(map[string]string)
+		for _, port := range serviceDetails.Ports {
+			parts := strings.Split(port, ":")
+			if len(parts) == 2 {
+				ports[parts[0]] = parts[1]
+			}
+		}
 
-// 		payload := MicroServiceDetails{
-// 			Image:   imageName,
-// 			Tag:     tag,
-// 			EnvVars: serviceDetails.EnvVars,
-// 			Secrets: serviceDetails.Secrets,
-// 			Volumes: volumes,
-// 			Ports:   ports,
-// 			Deploy:  serviceDetails.Deploy,
-// 		}
+		payload := MicroServiceDetails{
+			Image:    imageName,
+			Tag:      tag,
+			EnvVars:  serviceDetails.EnvVars,
+			Secrets:  serviceDetails.Secrets,
+			Networks: serviceDetails.Networks,
+			Volumes:  volumes,
+			Ports:    ports,
+			Deploy:   serviceDetails.Deploy,
+		}
 
-// 		ms.Services[serviceName] = payload
-// 	}
+		ms.Services[serviceName] = payload
+	}
 
-// 	return nil
-// }
+	return nil
+}
