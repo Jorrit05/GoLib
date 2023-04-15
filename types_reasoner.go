@@ -12,7 +12,7 @@ type NameGetter interface {
 }
 
 type Requestor struct {
-	Name             string   `json:"requestor_id"`
+	Name             string   `json:"name"`
 	CurrentArchetype string   `json:"current_archetype"`
 	AllowedPartners  []string `json:"allowed_partners"`
 }
