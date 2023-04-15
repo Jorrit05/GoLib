@@ -14,13 +14,19 @@ type MicroServiceData struct {
 }
 
 type MicroServiceDetails struct {
-	Tag     string
-	Image   string            `yaml:"image"`
-	Ports   map[string]string `yaml:"ports"`
-	EnvVars map[string]string `yaml:"environment"`
-	Secrets []string          `yaml:"secrets"`
-	Volumes map[string]string `yaml:"volumes"`
-	Deploy  Deploy            `yaml:"deploy,omitempty"`
+	Tag      string
+	Image    string            `yaml:"image"`
+	Ports    map[string]string `yaml:"ports"`
+	EnvVars  map[string]string `yaml:"environment"`
+	Networks Network           `yaml:"networks"`
+	Secrets  []string          `yaml:"secrets"`
+	Volumes  map[string]string `yaml:"volumes"`
+	Deploy   Deploy            `yaml:"deploy,omitempty"`
+}
+
+type Network struct {
+	Name    string
+	Aliases []string
 }
 
 type CreateServicePayload struct {
