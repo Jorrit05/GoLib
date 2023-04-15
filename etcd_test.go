@@ -62,7 +62,7 @@ func TestGetAndUnmarshalJSON(t *testing.T) {
 
 	// Test GetMicroServiceData
 	var msData MicroServiceDetails
-	err = GetAndUnmarshalJSON(cli, "/microservices/test-service", &msData)
+	_, err = GetAndUnmarshalJSON(cli, "/microservices/test-service", &msData)
 	require.NoError(t, err)
 	assert.NotNil(t, msData)
 	assert.Equal(t, "test-tag", msData.Tag)

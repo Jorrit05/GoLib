@@ -164,24 +164,16 @@ func GetKeyValueMap(etcdClient *clientv3.Client, pathName string) (map[string]st
 //   - etcdClient is an instance of the etcd client.
 //   - key is the etcd key prefix where the elements will be stored.
 func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *clientv3.Client, key string) error {
-	log.Print("Starting RegisterJSONArray")
-
-	log.Info("Dump JSON:" + string(jsonContent))
 
 	err := json.Unmarshal(jsonContent, &target)
 	if err != nil {
-		log.Info("ERROR IN UMARSHAL")
-
 		log.Errorf("failed to unmarshal JSON content: %v", err)
 		return err
 	}
-	log.Info("Dump target:" + string(target.Len()))
 
 	for i := 0; i < target.Len(); i++ {
-		log.Info("1")
 		element := target.Get(i).(NameGetter) // Assert that element implements NameGetter
-		log.Info("2")
-		log.Info("Element getname: " + element.GetName())
+
 		jsonRep, err := json.Marshal(element)
 		if err != nil {
 			log.Errorf("Failed to Marshal config: %v", err)
