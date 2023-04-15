@@ -194,27 +194,27 @@ func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *c
 // - etcdClient is an instance of the etcd client.
 // - key is the etcd key where the JSON value is stored.
 // - target should be a pointer to an instance of the target struct.
-func GetAndUnmarshalJSON[T any](etcdClient *clientv3.Client, key string, target T) error {
+func GetAndUnmarshalJSON[T any](etcdClient *clientv3.Client, key string, target T) ([]byte, error) {
 	// Get the value from etcd.
 	resp, err := etcdClient.Get(context.Background(), key)
 	if err != nil {
 		log.Errorf("failed to get value from etcd: %v", err)
-		return err
+		return nil, err
 	}
 
 	if len(resp.Kvs) == 0 {
 		log.Errorf("no value found for key: %s", key)
-		return err
+		return nil, err
 	}
 
 	// Unmarshal the JSON value into the target struct.
 	err = json.Unmarshal(resp.Kvs[0].Value, target)
 	if err != nil {
 		log.Errorf("failed to unmarshal JSON: %v", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return resp.Kvs[0].Value, nil
 }
 
 // T should be a struct type.
