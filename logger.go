@@ -3,6 +3,7 @@ package GoLib
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/sirupsen/logrus"
 )
@@ -42,4 +43,13 @@ func InitLogger(serviceName string) (*logrus.Entry, *os.File) {
 // New function to flush the logs
 func FlushLogs(logFile *os.File) {
 	logFile.Sync()
+}
+
+func HandlePanicAndFlushLogs(log *logrus.Entry, logFile *os.File) {
+	if r := recover(); r != nil {
+		stackTrace := string(debug.Stack())
+		log.WithField("stackTrace", stackTrace).Errorf("Panic occurred: %v", r)
+		FlushLogs(logFile) // Flush the logs before exiting
+		panic(r)
+	}
 }
