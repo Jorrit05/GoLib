@@ -25,7 +25,6 @@ type MicroServiceDetails struct {
 }
 
 type Network struct {
-	Name    string
 	Aliases []string
 }
 
