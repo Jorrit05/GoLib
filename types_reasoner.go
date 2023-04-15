@@ -32,3 +32,5 @@ func (c *RequestorConfig) Get(index int) interface{} {
 func (a *Requestor) GetName() string {
 	return a.Name
 }
+
+//test
