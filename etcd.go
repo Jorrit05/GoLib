@@ -53,9 +53,10 @@ func CreateEtcdLeaseObject(etcdClient *clientv3.Client, key string, value string
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	// Write agent information to etcd with the lease attached
-	_, err = etcdClient.Put(context.Background(), key, value, clientv3.WithLease(lease.ID))
+	_, err = etcdClient.Put(ctx, key, value, clientv3.WithLease(lease.ID))
 	if err != nil {
 		log.Fatalf("Failed creating a item with lease in etcd: %s", err)
 	}
@@ -105,8 +106,9 @@ func SetMicroservicesEtcd(etcdClient EtcdClient, fileLocation string, etcdPath s
 			log.Errorf("Failed to marshal the payload to JSON: %v", err)
 			return nil, err
 		}
-
-		_, err = etcdClient.Put(context.Background(), fmt.Sprintf("%s/%s", etcdPath, serviceName), string(jsonPayload))
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_, err = etcdClient.Put(ctx, fmt.Sprintf("%s/%s", etcdPath, serviceName), string(jsonPayload))
 		if err != nil {
 			log.Errorf("Failed creating service config in etcd: %s", err)
 			return nil, err
@@ -182,7 +184,10 @@ func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *c
 			return err
 		}
 
-		_, err = etcdClient.Put(context.Background(), fmt.Sprintf("%s/%s", key, string(element.GetName())), string(jsonRep))
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		_, err = etcdClient.Put(ctx, fmt.Sprintf("%s/%s", key, string(element.GetName())), string(jsonRep))
 		if err != nil {
 			log.Errorf("Failed creating archetypesJSON in etcd: %s", err)
 			return err
@@ -198,8 +203,11 @@ func RegisterJSONArray[T any](jsonContent []byte, target Iterable, etcdClient *c
 // - key is the etcd key where the JSON value is stored.
 // - target should be a pointer to an instance of the target struct.
 func GetAndUnmarshalJSON[T any](etcdClient *clientv3.Client, key string, target T) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	// Get the value from etcd.
-	resp, err := etcdClient.Get(context.Background(), key)
+	resp, err := etcdClient.Get(ctx, key)
 	if err != nil {
 		log.Errorf("failed to get value from etcd: %v", err)
 		return nil, err
@@ -225,8 +233,10 @@ func GetAndUnmarshalJSON[T any](etcdClient *clientv3.Client, key string, target 
 //
 // See etcd_test.go for examples
 func GetAndUnmarshalJSONMap[T any](etcdClient *clientv3.Client, prefix string) (map[string]T, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	// Get all key-value pairs under the specified prefix.
-	resp, err := etcdClient.Get(context.Background(), prefix, clientv3.WithPrefix())
+	resp, err := etcdClient.Get(ctx, prefix, clientv3.WithPrefix())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get values from etcd: %v", err)
 	}
@@ -268,9 +278,10 @@ func SaveStructToEtcd[T any](etcdClient *clientv3.Client, key string, target T) 
 		log.Errorf("failed to marshal struct: %v", err)
 		return err
 	}
-
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	// Save the JSON representation to the etcd key-value store
-	_, err = etcdClient.Put(context.Background(), key, string(jsonRep))
+	_, err = etcdClient.Put(ctx, key, string(jsonRep))
 	if err != nil {
 		log.Errorf("failed to save struct to etcd: %v", err)
 		return err
