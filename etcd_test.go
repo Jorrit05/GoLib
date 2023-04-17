@@ -1,4 +1,4 @@
-package GoLib
+package lib
 
 import (
 	"context"

@@ -2,6 +2,8 @@ package GoLib
 
 import (
 	"strings"
+
+	"github.com/cloudflare/cfssl/log"
 )
 
 // Unmarshal a docker stack file into a struct of type YamlConfig.
